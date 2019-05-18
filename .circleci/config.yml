@@ -10,7 +10,7 @@ jobs:
           MODEL: "dsl-ac68u"
           SDK_PLATFORM: "sdk"
           RELEASE_DIR: "src-rt-6.x.4708"
-          MERLIN_UPDATE: 'y'
+          MERLINUPDATE: 'y'
     steps:
       - checkout
       - run:
