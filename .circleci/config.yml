@@ -68,15 +68,16 @@ jobs:
           shell: /bin/bash
           no_output_timeout: 120m
           command: |
-            
-            exit 0
             export MERLINUPDATE=y
             env
             cd ${PROJECT_DIR}/release/${RELEASE_DIR}
             ls
             pwd
             make clean || echo "maybe already clean, so if it fails please continue"
-            make ${MODEL} | tee "/tmp/build.log" # | grep -i "error\|-e"
+            # make ${MODEL} | tee "/tmp/build.log" # | grep -i "error\|-e"
+            echo "XXX" > ${PROJECT_DIR}/release/${RELEASE_DIR}/image/file.trx
+            echo "XXX" > ${PROJECT_DIR}/release/${RELEASE_DIR}/image/file.md5
+            echo "CHANGELOG" > /tmp/build.log
             ls ${PROJECT_DIR}/release/${RELEASE_DIR}/image/
       - run:
           name: Remove image without firmware
@@ -106,12 +107,28 @@ jobs:
     steps:
       - attach_workspace:
           at: workspace
+      - add_ssh_keys:
+          fingerprints:
+            - "92:8c:58:f4:aa:44:98:aa:2f:ac:bc:8b:a5:de:f5:c2"
       - run: 
           name: "Publish manifest and release note for the current build"
           command: |
-
-
-            
+            ssh-keyscan github.com >> ~/.ssh/known_hosts
+            git config --global user.email "bot@gnuton.org"
+            git config --global user.name "Circle CI BOT"
+            git config --global push.default simple
+            git clone -b master --single-branch git@github.com:gnuton/asuswrt-merlin.ng.git
+            cd asuswrt-merlin.ng
+            echo "Creating manifest file..."
+            MAJOR_VER= echo "${CIRCLE_TAG}" | sed -E 's/([^-]*)-.*/\1/'
+            MINOR_VER= echo "${CIRCLE_TAG}" | sed -E 's/[^-]*-(.*)/\1/'
+            RELEASE_NOTE_FILE= echo "${MAJOR_VER}_MINOR_VER_note.txt" | sed "s/\./_/"
+            echo "DSL-AC68U#FW${MAJOR_VER}#EXT${MINOR_VER}#BETAFW0#BETAEXT0#" > manifest.txt
+            cp workspace/release/"${CHANGELOG_FILE}" "${RELEASE_NOTE_FILE}"
+            echo "Uploading to github manifest and ${RELEASE_NOTE_FILE}"
+            git add .
+            git commit -m "Updating Notes and manifest to ${MAJOR_VER} ${MINOR_VER} [ci skip]" manifest.txt "${RELEASE_NOTE_FILE}"
+            git push origin
   publish-github-release:
     docker:
       - image: cibuilds/github:latest
@@ -122,6 +139,7 @@ jobs:
       - run:
           name: "Publish Release on Github"
           command: |
+            exit 0
             echo "Uploading release..."
             RELEASE_TITLE="Stable: ${CIRCLE_TAG}"
             ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete -n "${RELEASE_TITLE}" -b "$(cat workspace/release/CHANGELOG)" ${CIRCLE_TAG} workspace/release/
