@@ -137,9 +137,8 @@ jobs:
           name: "Publish Release on Github"
           command: |
             echo "Uploading release..."
-            exit 0
-            RELEASE_TITLE="Stable: ${CIRCLE_TAG}"
-            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete -n "${RELEASE_TITLE}" -b "$(cat workspace/release/CHANGELOG)" ${CIRCLE_TAG} workspace/release/
+            RELEASE_TITLE="TEST DO NOT INSTALL: ${CIRCLE_TAG}"
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete -n "${RELEASE_TITLE}" -b "$(cat workspace/release/CHANGELOG)" -prerelease ${CIRCLE_TAG} workspace/release/
   publish-github-ci-pre-release:
     docker:
       - image: cibuilds/github:latest
