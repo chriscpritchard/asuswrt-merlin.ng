@@ -68,6 +68,8 @@ jobs:
           shell: /bin/bash
           no_output_timeout: 120m
           command: |
+            
+            exit 0
             export MERLINUPDATE=y
             env
             cd ${PROJECT_DIR}/release/${RELEASE_DIR}
@@ -98,6 +100,18 @@ jobs:
           root: workspace
           paths:
             - release
+  publish-manifest-and-notes:
+    docker:
+      - image: cibuilds/github:latest
+    steps:
+      - attach_workspace:
+          at: workspace
+      - run: 
+          name: "Publish manifest and release note for the current build"
+          command: |
+
+
+            
   publish-github-release:
     docker:
       - image: cibuilds/github:latest
@@ -137,6 +151,14 @@ workflows:
               ignore:
                - master
                - mainline
+      - publish-manifest-and-notes:
+          filters:
+            tags:
+              only: /[0-9]+.*gnuton[0-9]+/
+            branches:
+              ignore: /.*/
+          requires:
+            - build
       - publish-github-release:
           filters:
             tags:
@@ -145,6 +167,7 @@ workflows:
               ignore: /.*/
           requires:
             - build
+            - publish-manifest-and-notes
       - publish-github-ci-pre-release:
           filters:
             tags:
