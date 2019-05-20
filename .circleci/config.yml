@@ -117,9 +117,9 @@ jobs:
             echo "Creating manifest file..."
             MAJOR_VER=$(echo "${CIRCLE_TAG}" | sed -E 's/([^-]*)-.*/\1/')
             MINOR_VER=$(echo "${CIRCLE_TAG}" | sed -E 's/[^-]*-(.*)/\1/')
-            RELEASE_NOTE_FILE= echo "${MAJOR_VER}_MINOR_VER_note.txt" | sed "s/\./_/"
+            RELEASE_NOTE_FILE=$(echo "${MAJOR_VER}_${MINOR_VER}_note.txt" | sed "s/\./_/")
             echo "DSL-AC68U#FW${MAJOR_VER}#EXT${MINOR_VER}#BETAFW0#BETAEXT0#" > manifest.txt
-            cp workspace/release/"${CHANGELOG_FILE}" "${RELEASE_NOTE_FILE}"
+            cp $HOME/project/workspace/release/CHANGELOG "${RELEASE_NOTE_FILE}"
             echo "Uploading to github manifest and ${RELEASE_NOTE_FILE}"
             git add .
             git commit -m "Updating Notes and manifest to ${MAJOR_VER} ${MINOR_VER} [ci skip]" manifest.txt "${RELEASE_NOTE_FILE}"
