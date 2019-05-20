@@ -81,12 +81,6 @@ jobs:
             echo "CHANGELOG" > /tmp/build.log
             ls ${PROJECT_DIR}/release/${RELEASE_DIR}/image/
       - run:
-          name: Remove image without firmware
-          command: |
-            cd ${PROJECT_DIR}/release/${RELEASE_DIR}/image/
-            rm $(ls DSL-* | grep -v ".*DSL.*DSL.*")
-            ls
-      - run:
           name: Prepare workspace
           command: |
             mkdir -p workspace/release
