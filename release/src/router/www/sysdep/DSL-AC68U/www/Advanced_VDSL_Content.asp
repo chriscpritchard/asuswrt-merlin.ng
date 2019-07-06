@@ -942,6 +942,23 @@ function change_dsl_dns_enable(){
 		inputCtrl(document.form.dslx_dns2, 0);
 	}
 
+	if(dnspriv_support){
+		build_dot_server_presets();
+		inputCtrl(document.form.dnspriv_enable, 1);
+		change_dnspriv_enable(document.form.dnspriv_enable.value);
+
+		if (dnsfilter_support && dnsfilter_enable == 1)
+			document.getElementById("dnsfilter_hint_dnspriv").style.display = "";
+
+		if ((dhcp_dns1 != "" && dhcp_dns1 != lan_ipaddr) ||
+		    (dhcp_dns2 != "" && dhcp_dns2 != lan_ipaddr))
+			document.getElementById("dhcpdns_hint_dnspriv").style.display = "";
+	}
+	else{
+		inputCtrl(document.form.dnspriv_enable, 0);
+		change_dnspriv_enable(0);
+	}
+
 /*
 	if(document.form.dslx_DHCPClient[0].checked){
 		inputCtrl(document.form.dslx_dnsenable[0], 1);
