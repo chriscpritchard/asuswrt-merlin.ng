@@ -1086,6 +1086,172 @@ function ppp_echo_control(flag){
 	inputCtrl(document.form.dns_delay_round, enable);
 }
 
+function change_dnspriv_enable(flag){
+	if(flag == 1){
+		inputCtrl(document.form.dnspriv_profile[0], 1);
+		inputCtrl(document.form.dnspriv_profile[1], 1);
+		document.getElementById("DNSPrivacy").style.display = "";
+		document.getElementById("dnspriv_rulelist_Block").style.display = "";
+		document.getElementById("dot_presets_tr").style.display = "";
+		show_dnspriv_rulelist();
+	}
+	else{
+		inputCtrl(document.form.dnspriv_profile[0], 0);
+		inputCtrl(document.form.dnspriv_profile[1], 0);
+		document.getElementById("DNSPrivacy").style.display = "none";
+		document.getElementById("dnspriv_rulelist_Block").style.display = "none";
+		document.getElementById("dot_presets_tr").style.display = "none";
+	}
+}
+
+function addRow(obj, head){
+	if(head == 1)
+		dnspriv_rulelist_array += "&#60"
+	else
+		dnspriv_rulelist_array += "&#62"
+
+	dnspriv_rulelist_array += obj.value;
+	obj.value = "";
+}
+
+function addRow_Group(upper){
+	var rule_num = document.getElementById('dnspriv_rulelist_table').rows.length;
+	var item_num = document.getElementById('dnspriv_rulelist_table').rows[0].cells.length;
+
+	if(rule_num >= upper){
+		alert("<#JS_itemlimit1#> " + upper + " <#JS_itemlimit2#>");
+		return false;
+	}
+
+	if(document.form.dnspriv_server_0.value==""){
+		alert("<#JS_fieldblank#>");
+		document.form.dnspriv_server_0.focus();
+		document.form.dnspriv_server_0.select();
+		return false;
+	}
+
+	var is_ipv4 = (document.form.dnspriv_server_0.value.indexOf(".") != -1) ? true : false;
+	var is_ipv6 = (document.form.dnspriv_server_0.value.indexOf(":") != -1) ? true : false;
+	if(!is_ipv4 && !is_ipv6) {
+		alert(document.form.dnspriv_server_0.value + "<#JS_validip#>");
+		document.form.dnspriv_server_0.focus();
+		return false;
+	}
+	if ((is_ipv4 && !validator.isLegalIP(document.form.dnspriv_server_0)) ||
+	    (is_ipv6 && !validator.isLegal_ipv6(document.form.dnspriv_server_0)))
+		return false;
+
+	addRow(document.form.dnspriv_server_0, 1);
+	addRow(document.form.dnspriv_port_0, 0);
+	addRow(document.form.dnspriv_hostname_0, 0);
+	addRow(document.form.dnspriv_spkipin_0, 0);
+	show_dnspriv_rulelist();
+}
+
+function edit_Row(r){
+	var i=r.parentNode.parentNode.rowIndex;
+	document.form.dnspriv_server_0.value = document.getElementById('dnspriv_rulelist_table').rows[i].cells[0].innerHTML;
+	document.form.dnspriv_port_0.value = document.getElementById('dnspriv_rulelist_table').rows[i].cells[1].innerHTML; 
+	document.form.dnspriv_hostname_0.value = document.getElementById('dnspriv_rulelist_table').rows[i].cells[2].innerHTML; 
+	document.form.dnspriv_spkipin_0.value = document.getElementById('dnspriv_rulelist_table').rows[i].cells[3].innerHTML;
+
+	del_Row(r);	
+}
+
+function del_Row(r){
+	var i=r.parentNode.parentNode.rowIndex;
+	document.getElementById('dnspriv_rulelist_table').deleteRow(i);
+
+	var dnspriv_rulelist_value = "";
+	for(k=0; k<document.getElementById('dnspriv_rulelist_table').rows.length; k++){
+		for(j=0; j<document.getElementById('dnspriv_rulelist_table').rows[k].cells.length-1; j++){
+			if(j == 0)
+				dnspriv_rulelist_value += "&#60";
+			else
+				dnspriv_rulelist_value += "&#62";
+
+			if (document.getElementById('dnspriv_rulelist_table').rows[k].cells[j].innerHTML.lastIndexOf("...") < 0)
+				dnspriv_rulelist_value += document.getElementById('dnspriv_rulelist_table').rows[k].cells[j].innerHTML;
+			else
+				dnspriv_rulelist_value += document.getElementById('dnspriv_rulelist_table').rows[k].cells[j].title;
+		}
+	}
+
+	dnspriv_rulelist_array = dnspriv_rulelist_value;
+	if(dnspriv_rulelist_array == "")
+		show_dnspriv_rulelist();
+}
+
+function show_dnspriv_rulelist(){
+	var dnspriv_rulelist_row = dnspriv_rulelist_array.split('&#60');
+	var code = "";
+	var overlib_str;
+
+	code +='<table width="100%" border="1" cellspacing="0" cellpadding="4" align="center" class="list_table" id="dnspriv_rulelist_table">';
+	if(dnspriv_rulelist_row.length == 1)
+		code +='<tr><td style="color:#FFCC00;" colspan="5"><#IPConnection_VSList_Norule#></td></tr>';
+	else{
+		for(var i = 1; i < dnspriv_rulelist_row.length; i++){
+			code +='<tr id="row'+i+'">';
+			var dnspriv_rulelist_col = dnspriv_rulelist_row[i].split('&#62');
+			var wid=[27, 10, 27, 27];
+				for(var j = 0; j < dnspriv_rulelist_col.length; j++){
+
+					if (dnspriv_rulelist_col[j].length > 25) {
+						overlib_str = dnspriv_rulelist_col[j];
+						dnspriv_rulelist_col[j] = dnspriv_rulelist_col[j].substring(0, 22)+"...";
+						code +='<td width="'+wid[j]+'%" title="' + overlib_str + '">'+ dnspriv_rulelist_col[j] +'</td>';
+					} else {
+						code +='<td width="'+wid[j]+'%">'+ dnspriv_rulelist_col[j] +'</td>';
+					}
+				}
+				code +='<td width="9%"><!--input class="edit_btn" onclick="edit_Row(this);" value=""/-->';
+				code +='<input class="remove_btn" onclick="del_Row(this);" value=""/></td></tr>';
+		}
+	}
+	code +='</table>';
+	document.getElementById("dnspriv_rulelist_Block").innerHTML = code;
+}
+
+function build_dot_server_presets(){
+	var optGroup = "", opt;
+
+	free_options(document.form.dotPresets);
+	add_option(document.form.dotPresets, "<#Select_menu_default#>", -1, 1);
+
+	for(var i = 0; i < dot_servers_array.length; i++) {
+		if (dot_servers_array[i].length == 1) {
+			if (optGroup != "")	// Close existing group
+				document.form.dotPresets.appendChild(optGroup);
+			optGroup = document.createElement('optgroup');
+			optGroup.label = dot_servers_array[i][0];
+		} else {
+			if (optGroup == "")
+				optGroup = document.createElement('optgroup');	// No group was initialized, so do one
+			opt = document.createElement('option');
+			opt.innerHTML = dot_servers_array[i][0];
+			opt.value = i;
+			optGroup.appendChild(opt);
+		}
+	}
+	if (optGroup != "") document.form.dotPresets.appendChild(optGroup);
+}
+
+function change_wizard(o, id){
+	if (id == "dotPresets") {
+		var i = o.value;
+		if (i == -1) return;
+		document.form.dnspriv_server_0.value = dot_servers_array[i][1];
+		document.form.dnspriv_port_0.value = dot_servers_array[i][2];
+		document.form.dnspriv_hostname_0.value = dot_servers_array[i][3];
+		document.form.dnspriv_spkipin_0.value = dot_servers_array[i][4];
+
+		document.getElementById("dotPresets").selectedIndex = 0;
+	}
+}
+
+
+
 </script>
 </head>
 
