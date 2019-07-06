@@ -34,6 +34,17 @@ var original_dnsenable = parseInt('<% nvram_get("dslx_dnsenable"); %>');
 var original_ppp_echo = parseInt('<% nvram_get("wan_ppp_echo"); %>');
 var default_ppp_echo = parseInt('<% nvram_default_get("wan_ppp_echo"); %>');
 
+if(yadns_support){
+	var yadns_enable = '<% nvram_get("yadns_enable_x"); %>';
+	var yadns_mode = '<% nvram_get("yadns_mode"); %>';
+}
+
+if(dnspriv_support){
+	var dot_servers_array = [<% get_dnsprivacy_presets("dot"); %>];
+	var dnspriv_rulelist_array = '<% nvram_get("dnspriv_rulelist"); %>';
+}
+
+
 if(dualWAN_support){
 	var wan_type_name = wans_dualwan.split(" ")[<% nvram_get("wan_unit"); %>];
 	wan_type_name = wan_type_name.toUpperCase();
@@ -356,7 +367,47 @@ function initial(){
 	if(!dualWAN_support && !vdsl_support) {
 		document.getElementById("WANscap").style.display = "none";
 	}
-	
+
+	if (dnspriv_support) {
+		if (dnsfilter_support)
+			var dnsfilter_enable = '<% nvram_get("dnsfilter_enable_x"); %>';
+
+		var dhcp_dns1 = '<% nvram_get("dhcp_dns1_x"); %>';
+		var dhcp_dns2 = '<% nvram_get("dhcp_dns2_x"); %>';
+		var lan_ipaddr = '<% nvram_get("lan_ipaddr"); %>';
+	}
+	if(dnspriv_support){
+		build_dot_server_presets();
+		inputCtrl(document.form.dnspriv_enable, 1);
+		change_dnspriv_enable(document.form.dnspriv_enable.value);
+
+		if (dnsfilter_support && dnsfilter_enable == 1)
+			document.getElementById("dnsfilter_hint_dnspriv").style.display = "";
+
+		if ((dhcp_dns1 != "" && dhcp_dns1 != lan_ipaddr) ||
+		    (dhcp_dns2 != "" && dhcp_dns2 != lan_ipaddr))
+			document.getElementById("dhcpdns_hint_dnspriv").style.display = "";
+	}
+	else{
+		inputCtrl(document.form.dnspriv_enable, 0);
+		change_dnspriv_enable(0);
+	}
+
+	if(dnssec_support){
+		document.getElementById("dnssec_tr").style.display = "";
+		showhide("dnssec_strict_tr", "<% nvram_get("dnssec_enable"); %>" == "1" ? 1 : 0);
+	}
+
+	if(yadns_support){
+		if(yadns_enable != 0 && yadns_mode != -1){
+			document.getElementById("yadns_hint").style.display = "";
+			document.getElementById("yadns_hint").innerHTML = "<span><#YandexDNS_settings_hint#></span>";
+			if(dnspriv_support){
+				document.getElementById("yadns_hint_dnspriv").style.display = "";
+				document.getElementById("yadns_hint_dnspriv").innerHTML = "<span><#YandexDNS_settings_hint#></span>";
+			}
+		}
+	}
 }
 
 function change_wan_unit(obj){
@@ -486,7 +537,36 @@ function applyRule(){
 			document.form.action_script.value = "restart_dsl_setting;".concat(document.form.action_script.value);
 			document.form.dslx_transmode.value = document.form.dsltmp_transmode.value;
 		}
+		if(dnspriv_support){
+			if(document.form.dnspriv_enable.value == 1){
+				var dnspriv_rulelist_value = "";
+				for(k=0; k<document.getElementById('dnspriv_rulelist_table').rows.length; k++){
+					for(j=0; j<document.getElementById('dnspriv_rulelist_table').rows[k].cells.length-1; j++){
+						if(j == 0)
+							dnspriv_rulelist_value += "<";
+						else
+							dnspriv_rulelist_value += ">";
+						if (document.getElementById('dnspriv_rulelist_table').rows[k].cells[j].innerHTML.lastIndexOf("...") < 0)
+							dnspriv_rulelist_value += document.getElementById('dnspriv_rulelist_table').rows[k].cells[j].innerHTML;
+						else
+							dnspriv_rulelist_value += document.getElementById('dnspriv_rulelist_table').rows[k].cells[j].title;
+					}
+				}
+				document.form.dnspriv_rulelist.disabled = false;
+				document.form.dnspriv_rulelist.value = dnspriv_rulelist_value;
+			}
+			document.form.action_script.value += ";restart_stubby";
+		}
+
+		if ((dnssec_support &&
+		      (getRadioValue(document.form.dnssec_enable) != '<% nvram_get("dnssec_enable"); %>') ||
+		      (getRadioValue(document.form.dnssec_check_unsigned_x) != '<% nvram_get("dnssec_check_unsigned_x"); %>')) ||
+
+		    (getRadioValue(document.form.dns_norebind) != '<% nvram_get("dns_norebind"); %>') ||
+		    (getRadioValue(document.form.dns_fwd_local) != '<% nvram_get("dns_fwd_local"); %>') )
+				document.form.action_script.value += ";restart_dnsmasq";
 		showLoading();
+
 		document.form.submit();
 	}
 }
