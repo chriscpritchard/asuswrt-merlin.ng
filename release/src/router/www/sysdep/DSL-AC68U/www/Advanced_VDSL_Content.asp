@@ -557,6 +557,7 @@ function applyRule(){
 				}
 				document.form.dnspriv_rulelist.disabled = false;
 				document.form.dnspriv_rulelist.value = dnspriv_rulelist_value;
+				console.log(document.dnspriv_rulelist.value);
 			}
 			document.form.action_script.value += ";restart_stubby";
 		}
